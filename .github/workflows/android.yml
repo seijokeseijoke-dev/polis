@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write   # krävs för att skapa Release med APK
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,8 +25,30 @@ jobs:
       - name: Build debug APK
         run: ./gradlew --no-daemon assembleDebug
 
-      - name: Upload APK
+      - name: Name APK after version
+        id: apk
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          FILE="polishandelser-${VERSION}-build${{ github.run_number }}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$FILE"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: polishandelser-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: ${{ steps.apk.outputs.file }}
+
+      # Vid push till main: publicera APK:n som en Release (direktnedladdning, ingen zip).
+      - name: Publish Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.apk.outputs.version }}-build${{ github.run_number }}
+          name: Polishändelser ${{ steps.apk.outputs.version }} (build ${{ github.run_number }})
+          body: |
+            Debug-APK byggd från ${{ github.sha }}.
+            Ladda ner .apk-filen nedan och installera på telefonen (tillåt installation från okänd källa).
+          files: ${{ steps.apk.outputs.file }}
+          make_latest: true

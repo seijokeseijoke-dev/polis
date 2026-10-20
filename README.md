@@ -41,8 +41,7 @@ app/src/main/java/se/polishandelser/app/
 
 **Kommandorad:** `./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`
 
-**GitHub:** Varje push till `main` bygger en debug-APK via GitHub Actions
-(`.github/workflows/android.yml`). Hämta den under *Actions → senaste körningen → Artifacts*.
+**GitHub:** Varje push till `main` bygger en debug-APK och publicerar den som en **Release** (Releases till höger på repots startsida → ladda ner `.apk`).
 
 ## Steg 1 – lägga upp på GitHub
 ```bash
