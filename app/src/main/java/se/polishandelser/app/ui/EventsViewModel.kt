@@ -11,6 +11,9 @@ import retrofit2.HttpException
 import se.polishandelser.app.data.PoliceRepository
 import se.polishandelser.app.data.model.PoliceEvent
 import java.io.IOException
+import java.util.Locale
+
+private val SV = Locale("sv", "SE")
 
 data class EventsUiState(
     val events: List<PoliceEvent> = emptyList(),
@@ -39,6 +42,30 @@ class EventsViewModel(
     }
 
     fun eventById(id: Int): PoliceEvent? = state.events.firstOrNull { it.id == id }
+
+    /** Händelser för vald ort, nyast klockslag först. */
+    fun eventsFor(ort: String): List<PoliceEvent> =
+        state.events
+            .filter { it.matchesOrt(ort) }
+            .sortedWith(compareByDescending<PoliceEvent> { it.sortTime }.thenByDescending { it.id })
+
+    /**
+     * Orter som förekommer i den hämtade datan, med antal händelser – för förslag i sökfältet.
+     * Inkluderar län så att man kan välja ett helt län.
+     */
+    fun ortSuggestions(query: String, limit: Int = 8): List<Pair<String, Int>> {
+        val q = query.trim().lowercase(SV)
+        val counts = HashMap<String, Int>()
+        for (e in state.events) {
+            val names = setOf(e.ort, e.locationName).filter { it.isNotBlank() }
+            for (n in names) counts[n] = (counts[n] ?: 0) + 1
+        }
+        return counts.entries
+            .filter { q.isEmpty() || it.key.lowercase(SV).startsWith(q) }
+            .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .take(limit)
+            .map { it.key to it.value }
+    }
 
     private fun load(pullToRefresh: Boolean) {
         if (state.isRefreshing) return

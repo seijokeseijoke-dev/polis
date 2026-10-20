@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,9 +42,12 @@ import se.polishandelser.app.data.model.PoliceEvent
 @Composable
 fun EventsScreen(
     vm: EventsViewModel,
+    ort: String,
+    onBack: () -> Unit,
     onEventClick: (PoliceEvent) -> Unit
 ) {
     val state = vm.state
+    val events = vm.eventsFor(ort)
     val snackbar = remember { SnackbarHostState() }
 
     // Fel när det redan finns data -> snackbar, listan ligger kvar.
@@ -53,7 +60,16 @@ fun EventsScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Polishändelser") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(ort) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Byt ort")
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
@@ -72,7 +88,17 @@ fun EventsScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 4.dp)
                     ) {
-                        items(state.events, key = { it.id }) { event ->
+                        if (events.isEmpty()) {
+                            item {
+                                Text(
+                                    "Inga händelser för $ort bland de ${state.events.size} senaste i hela landet. " +
+                                        "Dra nedåt för att uppdatera, eller kontrollera stavningen.",
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(24.dp)
+                                )
+                            }
+                        }
+                        items(events, key = { it.id }) { event ->
                             EventCard(event, onClick = { onEventClick(event) })
                         }
                     }

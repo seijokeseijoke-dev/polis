@@ -1,5 +1,6 @@
 package se.polishandelser.app
 
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,6 +23,7 @@ import androidx.navigation.navArgument
 import se.polishandelser.app.ui.EventDetailScreen
 import se.polishandelser.app.ui.EventsScreen
 import se.polishandelser.app.ui.EventsViewModel
+import se.polishandelser.app.ui.OrtScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,9 +41,21 @@ private fun AppNavigation() {
     // Skapas här (aktivitetsnivå) så att lista och detaljvy delar samma data.
     val vm: EventsViewModel = viewModel()
 
-    NavHost(navController = nav, startDestination = "events") {
-        composable("events") {
-            EventsScreen(vm = vm, onEventClick = { nav.navigate("event/${it.id}") })
+    NavHost(navController = nav, startDestination = "ort") {
+        composable("ort") {
+            OrtScreen(vm = vm, onOrtSelected = { nav.navigate("events/${Uri.encode(it)}") })
+        }
+        composable(
+            route = "events/{ort}",
+            arguments = listOf(navArgument("ort") { type = NavType.StringType })
+        ) { entry ->
+            val ort = entry.arguments?.getString("ort").orEmpty()
+            EventsScreen(
+                vm = vm,
+                ort = ort,
+                onBack = { nav.popBackStack() },
+                onEventClick = { nav.navigate("event/${it.id}") }
+            )
         }
         composable(
             route = "event/{id}",

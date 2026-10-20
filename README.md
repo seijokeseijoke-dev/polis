@@ -3,8 +3,9 @@
 Enkel Android-app (Kotlin + Jetpack Compose) som visar aktuella händelser från Polisens öppna API:
 `GET https://polisen.se/api/events`
 
-## Funktioner (v0.1)
-- Lista med händelser (typ, tid, rubrik, sammanfattning, län)
+## Funktioner (v0.2)
+- Startskärm med inmatningsfält för **ort** (kommun eller län) + förslag ur aktuellt flöde
+- Lista med händelser för vald ort, **nyast klockslag först** (händelsetid ur rubriken, inte publiceringstid)
 - Pull-to-refresh
 - Detaljvy med länk till hela texten på polisen.se
 - Felhantering: helskärmsfel med "Försök igen" vid tom lista, snackbar om listan redan finns
@@ -30,7 +31,8 @@ app/src/main/java/se/polishandelser/app/
 │   └── model/PoliceEvent.kt   Datamodell + datum-/GPS-tolkning
 └── ui/
     ├── EventsViewModel.kt     UI-state (loading/refreshing/error)
-    ├── EventsScreen.kt        Lista + pull-to-refresh
+    ├── OrtScreen.kt           Startskärm: ortfält + förslag
+    ├── EventsScreen.kt        Lista för ort + pull-to-refresh
     └── EventDetailScreen.kt   Detaljvy
 ```
 
@@ -72,6 +74,8 @@ git push -u origin main
 - Hemskärmswidget (Glance)
 
 ## Om datan
+- Ortfiltreringen görs i appen. API:ts `?locationname=` gav i test samma svar oavsett ort, så det används inte.
+- Orten tas från sista ledet i rubriken ("…, Trafikolycka, Skövde"). Flödet innehåller bara de ~500 senaste händelserna i hela landet (några dygn), så små orter kan sakna träffar.
 - API:t ger bara en kort sammanfattning; hela texten finns på händelsesidan.
 - Platsen är oftast **län** med länets mittpunkt-koordinat, inte exakt plats – viktigt att tänka på för en karta.
 - Polisen kan strypa klienter som anropar för ofta. Appen anropar bara vid start och vid pull-to-refresh.

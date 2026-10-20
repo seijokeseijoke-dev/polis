@@ -1,6 +1,8 @@
 package se.polishandelser.app.data.model
 
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -37,14 +39,62 @@ data class PoliceEvent(
             runCatching { OffsetDateTime.parse(it.trim(), API_FORMAT) }.getOrNull()
         }
 
-    /** T.ex. "20 okt 08:28" – faller tillbaka på råsträngen om formatet ändras. */
+    /**
+     * Orten (kommunen) – sista ledet i namnet: "20 oktober 08.06, Trafikolycka, Skövde" -> "Skövde".
+     * location.name är numera oftast bara länet, så kommunen finns bara här.
+     * Länsövergripande poster ger länet ("..., Sammanfattning natt, Västra Götalands län").
+     */
+    val ort: String
+        get() = name?.substringAfterLast(',', missingDelimiterValue = "")?.trim()
+            ?.ifBlank { null } ?: locationName
+
+    /**
+     * När händelsen inträffade, enligt namnet ("20 oktober 08.06"). datetime är publiceringstiden,
+     * som kan ligga flera timmar senare. Året saknas i namnet och tas från publiceringstiden
+     * (händelse i december som publiceras i januari -> föregående år).
+     */
+    val eventTime: OffsetDateTime?
+        get() {
+            val m = NAME_TIME.find(name.orEmpty()) ?: return null
+            val (day, monthName, hour, minute) = m.destructured
+            val month = SV_MONTHS[monthName.lowercase(SV)] ?: return null
+            val published = parsedTime ?: return null
+            return runCatching {
+                var local = LocalDateTime.of(published.year, month, day.toInt(), hour.toInt(), minute.toInt())
+                if (local.isAfter(published.toLocalDateTime().plusDays(1))) local = local.minusYears(1)
+                local.atZone(STOCKHOLM).toOffsetDateTime()
+            }.getOrNull()
+        }
+
+    /** Sorteringsnyckel: händelsetid, annars publiceringstid. */
+    val sortTime: OffsetDateTime? get() = eventTime ?: parsedTime
+
+    /** T.ex. "20 okt. 08:06" – händelsetid i första hand, faller tillbaka på råsträngen. */
     val displayTime: String
-        get() = parsedTime?.format(DISPLAY_FORMAT) ?: datetime.orEmpty()
+        get() = sortTime?.format(DISPLAY_FORMAT) ?: datetime.orEmpty()
+
+    /** Matchar orten (kommun) eller länet, skiftlägesokänsligt. */
+    fun matchesOrt(query: String): Boolean {
+        val q = query.trim().lowercase(SV)
+        if (q.isEmpty()) return false
+        return ort.lowercase(SV) == q || locationName.lowercase(SV) == q
+    }
 
     companion object {
+        private val SV = Locale("sv", "SE")
+        private val STOCKHOLM: ZoneId = ZoneId.of("Europe/Stockholm")
+
         // Timmen saknar inledande nolla i API:t ("8:28:36"), därav H.
         private val API_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd H:mm:ss XXX")
-        private val DISPLAY_FORMAT = DateTimeFormatter.ofPattern("d MMM HH:mm", Locale("sv", "SE"))
+        private val DISPLAY_FORMAT = DateTimeFormatter.ofPattern("d MMM HH:mm", SV)
+
+        // "20 oktober 08.06, ..."
+        private val NAME_TIME = Regex("""^\s*(\d{1,2})\s+(\p{L}+)\s+(\d{1,2})[.:](\d{2})""")
+
+        private val SV_MONTHS = mapOf(
+            "januari" to 1, "februari" to 2, "mars" to 3, "april" to 4, "maj" to 5, "juni" to 6,
+            "juli" to 7, "augusti" to 8, "september" to 9, "oktober" to 10, "november" to 11, "december" to 12
+        )
     }
 }
 
