@@ -1,0 +1,4 @@
+<resources>
+    <!-- Compose sköter UI-temat; detta är bara fönstertemat före första frame. -->
+    <style name="Theme.PolisHandelser" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

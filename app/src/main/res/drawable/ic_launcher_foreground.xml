@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Enkel platshållarikon (sköld). Byt mot riktig ikon innan Play-publicering. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L76,36 L76,54 C76,68 66,78 54,82 C42,78 32,68 32,54 L32,36 Z" />
+    <path
+        android:fillColor="#1A3A6B"
+        android:pathData="M54,40 L57,49 L66,49 L59,55 L62,64 L54,58 L46,64 L49,55 L42,49 L51,49 Z" />
+</vector>
