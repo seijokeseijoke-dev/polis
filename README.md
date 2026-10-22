@@ -41,7 +41,7 @@ app/src/main/java/se/polishandelser/app/
 
 **Kommandorad:** `./gradlew assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk`
 
-**GitHub:** Varje push till `main` bygger en debug-APK och publicerar den som en **Release** (Releases till höger på repots startsida → ladda ner `.apk`).
+**GitHub:** Varje push till `main` bygger en debug-APK. Den senaste finns alltid här: https://github.com/seijokeseijoke-dev/polis/raw/apk/polishandelser.apk (grenen `apk` och releasen *senaste* skrivs över vid varje bygge).
 
 ## Steg 1 – lägga upp på GitHub
 ```bash
